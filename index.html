@@ -460,8 +460,7 @@
 /* =========================
    꼭 바꿔야 하는 값
 ========================= */
-const API_URL = "https://script.google.com/macros/s/AKfycbyCAZz1dg4n5V37MJoFpt9sIxTX_8ihzkdKlHpVTYSoblNGQKYmRYgY2GvL4UatewlHgQ/exec"; 
-//URL
+const API_URL = "https://script.google.com/macros/s/AKfycbw0J8eRLGW_xjVEvppgfS3LqYwbnPXTk97KXZQWni-pTAqZreF_jVVy1Vf2g_o3L_EU8w/exec";
 
 /* =========================
    기본 상태
@@ -968,6 +967,10 @@ function flattenEntries(){
   return rows;
 }
 
+/* =====================================================
+   기존 함수명 유지
+   저장 실패가 줄어들도록 no-cors 방식으로 수정
+===================================================== */
 async function saveAllToGoogleSheet(){
   try{
     setSyncStatus("저장 중...", false);
@@ -980,16 +983,18 @@ async function saveAllToGoogleSheet(){
       rows: flattenEntries()
     };
 
-    const res = await fetch(API_URL, {
+    await fetch(API_URL, {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8"
+      },
       body: JSON.stringify(payload)
     });
 
-    const text = await res.text();
     saveState();
-    setSyncStatus("구글시트 저장 완료", true);
-    alert("구글시트에 저장되었습니다.\n\n응답: " + text);
+    setSyncStatus("구글시트 저장 요청 완료", true);
+    alert("구글시트로 저장 요청을 보냈습니다.\n잠시 후 '구글시트 불러오기'로 확인해보세요.");
   }catch(err){
     console.error(err);
     setSyncStatus("저장 실패", false);
