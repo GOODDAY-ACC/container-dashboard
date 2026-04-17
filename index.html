@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>컨테이너 수량 관리 대시보드</title>
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --panel:#ffffff;
+      --line:#d7dce7;
+      --line-2:#bcc5d6;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --blue:#e8f0ff;
+      --blue2:#dbeafe;
+      --nav:#0f172a;
+      --nav2:#1e293b;
+      --yellow:#fff6a5;
+      --shadow:0 10px 30px rgba(15,23,42,.08);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    }
+    .app{
+      display:grid;
+      grid-template-columns:260px 1fr;
+      min-height:100vh;
+    }
+    .sidebar{
+      background:linear-gradient(180deg,var(--nav),var(--nav2));
+      color:#fff;
+      padding:24px 18px;
+      position:sticky;
+      top:0;
+      height:100vh;
+      overflow:auto;
+    }
+    .brand{
+      font-size:22px;
+      font-weight:800;
+      margin-bottom:8px;
+    }
+    .brand-sub{
+      font-size:13px;
+      color:#cbd5e1;
+      line-height:1.5;
+      margin-bottom:22px;
+    }
+    .menu{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .menu button{
+      width:100%;
+      text-align:left;
+      border:none;
+      color:#fff;
+      background:rgba(255,255,255,.08);
+      padding:14px;
+      border-radius:14px;
+      cursor:pointer;
+      font-size:15px;
+      font-weight:700;
+    }
+    .menu button.active{
+      background:#fff;
+      color:#0f172a;
+    }
+    .content{
+      padding:24px;
+    }
+    .page{display:none}
+    .page.active{display:block}
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:16px;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
+    h1{
+      margin:0 0 8px 0;
+      font-size:28px;
+    }
+    h2{
+      margin:0 0 14px 0;
+      font-size:20px;
+    }
+    h3{
+      margin:0 0 10px 0;
+      font-size:16px;
+    }
+    .muted{color:var(--muted)}
+    .toolbar{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:18px;
+      margin-bottom:18px;
+    }
+    .grid{
+      display:grid;
+      gap:18px;
+    }
+    .grid-2-even{
+      grid-template-columns:1fr 1fr;
+    }
+    .summary-row{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(160px,1fr));
+      gap:12px;
+    }
+    .stat{
+      background:#f8fafc;
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
+    .stat .k{
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .stat .v{
+      font-size:24px;
+      font-weight:800;
+    }
+    .table-title{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:10px;
+      flex-wrap:wrap;
+    }
+    .right{
+      color:var(--muted);
+      font-size:13px;
+    }
+    .scroll{overflow:auto}
+    table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      font-size:14px;
+      background:#fff;
+    }
+    th,td{
+      border:1px solid var(--line-2);
+      padding:8px 6px;
+      text-align:center;
+      vertical-align:middle;
+    }
+    th{
+      background:#f3f4f6;
+      font-weight:700;
+    }
+    .th-blue{background:var(--blue2)}
+    .left{text-align:left}
+    .yellow{background:var(--yellow); font-weight:700}
+    .inline-note{
+      background:#f8fafc;
+      border:1px dashed var(--line-2);
+      border-radius:12px;
+      padding:10px 12px;
+      color:#475569;
+      font-size:13px;
+      line-height:1.6;
+      margin-top:10px;
+    }
+    button{
+      border:none;
+      background:#111827;
+      color:#fff;
+      border-radius:10px;
+      padding:10px 14px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{background:#e5e7eb; color:#111827}
+    button.blue{background:#2563eb}
+    button.red{background:#dc2626}
+    input,select{
+      width:100%;
+      padding:10px 12px;
+      border:1px solid var(--line-2);
+      border-radius:10px;
+      background:#fff;
+      font-size:14px;
+    }
+    label{
+      display:block;
+      font-size:13px;
+      color:var(--muted);
+      margin-bottom:6px;
+    }
+    .user-table td input, .base-table td input{
+      width:100%;
+    }
+    .week-nav{
+      display:grid;
+      grid-template-columns:180px 180px 1fr auto auto auto;
+      gap:10px;
+      align-items:end;
+    }
+    .week-table input{
+      border:none;
+      background:transparent;
+      text-align:center;
+      padding:6px;
+      border-radius:8px;
+    }
+    .week-table input:focus{
+      outline:2px solid #93c5fd;
+      background:#eff6ff;
+    }
+    .badge{
+      display:inline-block;
+      background:#eef2ff;
+      color:#4338ca;
+      border-radius:999px;
+      padding:6px 10px;
+      font-size:12px;
+      font-weight:700;
+    }
+    .search-cell{
+      padding:6px;
+      background:#f8fafc;
+    }
+    .search-cell input, .search-cell select{
+      width:100%;
+      padding:8px 10px;
+      font-size:13px;
+      border:1px solid var(--line-2);
+      border-radius:8px;
+    }
+    .sync-badge{
+      display:inline-block;
+      padding:6px 10px;
+      border-radius:999px;
+      background:#eef2ff;
+      color:#4338ca;
+      font-size:12px;
+      font-weight:700;
+    }
+    @media (max-width:1200px){
+      .grid-2-even{grid-template-columns:1fr}
+      .summary-row{grid-template-columns:repeat(2,minmax(150px,1fr))}
+      .week-nav{grid-template-columns:1fr 1fr}
+    }
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr}
+      .sidebar{position:relative; height:auto}
+    }
+    @media (max-width:680px){
+      .content{padding:14px}
+      .summary-row,.week-nav{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">컨테이너 관리</div>
+    <div class="brand-sub">구글시트 연동 버전</div>
+    <div class="menu">
+      <button class="active" onclick="showPage('statusPage', this)">1. 콘솔현황</button>
+      <button onclick="showPage('masterPage', this)">2. 기준정보 관리</button>
+      <button onclick="showPage('weeklyPage', this)">3. 최근 1주 입력</button>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="topbar">
+      <div>
+        <h1>컨테이너 수량 관리 대시보드</h1>
+        <div class="muted">구글시트 공용 저장소 연동 · 여러 PC 사용 가능</div>
+      </div>
+      <div class="toolbar">
+        <span class="sync-badge" id="syncStatus">시트 연결 대기</span>
+        <button class="blue" onclick="saveAllToGoogleSheet()">구글시트 저장</button>
+        <button class="secondary" onclick="loadAllFromGoogleSheet()">구글시트 불러오기</button>
+        <button class="secondary" onclick="exportBackup()">백업 다운로드</button>
+        <button class="secondary" onclick="document.getElementById('backupFileInput').click()">백업 복원</button>
+        <button class="secondary" onclick="resetDemo()">데모값 다시 불러오기</button>
+        <button class="red" onclick="clearAllData()">전체 초기화</button>
+      </div>
+      <input type="file" id="backupFileInput" accept=".json" style="display:none" onchange="importBackupFile(event)">
+    </div>
+
+    <section id="statusPage" class="page active">
+      <div class="card">
+        <div class="table-title">
+          <h2>빠른 현황</h2>
+          <div class="right">오늘 기준 자동 집계</div>
+        </div>
+        <div class="summary-row">
+          <div class="stat">
+            <div class="k" id="statTodayLabel">금일</div>
+            <div class="v" id="statToday">0</div>
+          </div>
+          <div class="stat">
+            <div class="k" id="statPrevDayLabel">직전년 금일</div>
+            <div class="v" id="statPrevDay">0</div>
+          </div>
+          <div class="stat">
+            <div class="k" id="statSearchMonthLabel">금월</div>
+            <div class="v" id="statSearchMonth">0</div>
+          </div>
+          <div class="stat">
+            <div class="k" id="statSearchYearLabel">금년</div>
+            <div class="v" id="statSearchYear">0</div>
+          </div>
+        </div>
+        <div class="inline-note">
+          금월은 해당 월 1일부터 오늘까지의 누적 합, 금년은 1월 1일부터 오늘까지의 누적 합입니다.
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-title">
+          <h2>조회 요약</h2>
+          <div class="right">금일 기준 자동 날짜 표시 + 표 안에서 바로 검색</div>
+        </div>
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th rowspan="3" style="width:14%">구분</th>
+                <th colspan="2">금일기준</th>
+                <th colspan="6">검색기준</th>
+              </tr>
+              <tr>
+                <th rowspan="2" class="th-blue" style="width:12%" id="todayHeaderLabel">-</th>
+                <th rowspan="2" style="width:12%" id="prevTodayHeaderLabel">-</th>
+                <th colspan="2">일자별</th>
+                <th colspan="2">월별</th>
+                <th colspan="2">연도별</th>
+              </tr>
+              <tr>
+                <th class="search-cell"><input type="date" id="inlineSearchDay" onchange="renderSummaryTable()"></th>
+                <th id="inlineSearchDayPrevLabel">직전년 일합</th>
+                <th class="search-cell"><input type="month" id="inlineSearchMonth" onchange="renderSummaryTable()"></th>
+                <th id="inlineSearchMonthPrevLabel">직전년 월합</th>
+                <th class="search-cell"><select id="inlineSearchYear" onchange="renderSummaryTable()"></select></th>
+                <th id="inlineSearchYearPrevLabel">직전년 연합</th>
+              </tr>
+            </thead>
+            <tbody id="summaryBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="masterPage" class="page">
+      <div class="grid grid-2-even">
+        <div class="card">
+          <div class="table-title">
+            <h2>파트너 관리</h2>
+            <div class="right">추가, 수정, 삭제 가능</div>
+          </div>
+          <div class="scroll">
+            <table class="base-table">
+              <thead>
+                <tr>
+                  <th>파트너명</th>
+                  <th style="width:16%">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="partnerTableBody"></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="margin-top:12px">
+            <button onclick="addPartnerRow()">파트너 추가</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-title">
+            <h2>구분 관리</h2>
+            <div class="right">콘솔 / 풀컨 등 관리</div>
+          </div>
+          <div class="scroll">
+            <table class="base-table">
+              <thead>
+                <tr>
+                  <th>구분명</th>
+                  <th style="width:16%">삭제</th>
+                </tr>
+              </thead>
+              <tbody id="typeTableBody"></tbody>
+            </table>
+          </div>
+          <div class="toolbar" style="margin-top:12px">
+            <button onclick="addTypeRow()">구분 추가</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="weeklyPage" class="page">
+      <div class="card">
+        <div class="table-title">
+          <h2>최근 1주 입력화면</h2>
+          <div class="right"><span class="badge" id="weekCaption">-</span></div>
+        </div>
+
+        <div class="week-nav">
+          <div>
+            <label for="weekBaseDate">기준일 선택</label>
+            <input type="date" id="weekBaseDate">
+          </div>
+          <div>
+            <label for="weekMoveCount">이전 몇 주 이동</label>
+            <select id="weekMoveCount">
+              <option value="0">현재 주</option>
+              <option value="1">1주 전</option>
+              <option value="2">2주 전</option>
+              <option value="3">3주 전</option>
+              <option value="4">4주 전</option>
+              <option value="8">8주 전</option>
+              <option value="12">12주 전</option>
+            </select>
+          </div>
+          <div class="inline-note" style="margin:0">
+            처음에는 오늘 기준 직전 6일 포함 7일치가 자동 표시됩니다.
+            기준일을 바꾸거나 이전 주를 선택하면 과거 주간 화면으로 이동해 수정·추가 입력할 수 있습니다.
+          </div>
+          <button class="secondary" onclick="moveWeek(-1)">이전 주</button>
+          <button class="secondary" onclick="moveWeek(1)">다음 주</button>
+          <button onclick="applyWeekSearch()">주간 조회</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="scroll">
+          <table class="week-table" id="weekInputTable"></table>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+/* =========================
+   꼭 바꿔야 하는 값
+========================= */
+const API_URL = "https://script.google.com/macros/s/AKfycbyCAZz1dg4n5V37MJoFpt9sIxTX_8ihzkdKlHpVTYSoblNGQKYmRYgY2GvL4UatewlHgQ/exec"; 
+//URL
+
+/* =========================
+   기본 상태
+========================= */
+const STORAGE_KEY = "container_dashboard_google_v1";
+
+const defaultState = {
+  partners: ["참좋은날","범아","원투","드림","바이마","늘좋은날"],
+  types: ["콘솔","풀컨"],
+  entries: {},
+  weeklyBaseDate: null,
+  lastSavedAt: null
+};
+
+function deepClone(v){ return JSON.parse(JSON.stringify(v)); }
+
+function fmtDate(date){
+  const y = date.getFullYear();
+  const m = String(date.getMonth()+1).padStart(2,'0');
+  const d = String(date.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+function humanDate(dateStr){
+  if(!dateStr) return "";
+  const [y,m,d] = dateStr.split("-");
+  return `${y}.${m}.${d}`;
+}
+function toMonthKey(dateStr){ return dateStr.slice(0,7); }
+function toYearKey(dateStr){ return dateStr.slice(0,4); }
+function getPrevYearDateStr(dateStr){
+  const [y,m,d] = dateStr.split("-").map(Number);
+  const dt = new Date(y-1, m-1, d);
+  return fmtDate(dt);
+}
+function weekLabel(date){
+  const first = new Date(date.getFullYear(), date.getMonth(), 1);
+  const offset = date.getDate() + first.getDay() - 1;
+  const week = Math.floor(offset / 7) + 1;
+  const names = ["첫째주","둘째주","셋째주","넷째주","다섯째주","여섯째주"];
+  return names[Math.min(week-1, names.length-1)];
+}
+function dayKor(date){
+  return ["일","월","화","수","목","금","토"][date.getDay()];
+}
+function escapeHtml(text){
+  return String(text ?? "")
+    .replaceAll("&","&amp;")
+    .replaceAll("<","&lt;")
+    .replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;");
+}
+function escapeJs(text){
+  return String(text ?? "").replaceAll("\\", "\\\\").replaceAll("'", "\\'");
+}
+
+/* =========================
+   local 저장
+========================= */
+function loadState(){
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if(!raw){
+    const initial = deepClone(defaultState);
+    initial.weeklyBaseDate = fmtDate(new Date());
+    seedDemoEntries(initial);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    return initial;
+  }
+  const loaded = JSON.parse(raw);
+  if(!loaded.weeklyBaseDate) loaded.weeklyBaseDate = fmtDate(new Date());
+  return loaded;
+}
+
+let state = loadState();
+
+function saveState(){
+  state.lastSavedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+/* =========================
+   데이터 유틸
+========================= */
+function ensureEntry(dateStr, type, partner){
+  if(!state.entries[dateStr]) state.entries[dateStr] = {};
+  if(!state.entries[dateStr][type]) state.entries[dateStr][type] = {};
+  if(state.entries[dateStr][type][partner] === undefined) state.entries[dateStr][type][partner] = 0;
+}
+function getValue(dateStr, type, partner){
+  return state.entries?.[dateStr]?.[type]?.[partner] ?? 0;
+}
+function setValue(dateStr, type, partner, val){
+  ensureEntry(dateStr, type, partner);
+  state.entries[dateStr][type][partner] = Number(val) || 0;
+}
+function getWeekDays(baseDateStr){
+  const base = new Date(baseDateStr);
+  const arr = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(base);
+    d.setDate(base.getDate()-i);
+    arr.push(d);
+  }
+  return arr;
+}
+function sumByPartnerDate(dateStr, partner){
+  let total = 0;
+  for(const type of state.types){
+    total += getValue(dateStr, type, partner);
+  }
+  return total;
+}
+function sumByDateTotal(dateStr){
+  let total = 0;
+  for(const type of state.types){
+    for(const partner of state.partners){
+      total += getValue(dateStr, type, partner);
+    }
+  }
+  return total;
+}
+function sumByPartnerMonth(monthKey, partner){
+  let total = 0;
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(toMonthKey(dateStr) === monthKey){
+      total += sumByPartnerDate(dateStr, partner);
+    }
+  });
+  return total;
+}
+function sumByPartnerYear(yearKey, partner){
+  let total = 0;
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(toYearKey(dateStr) === yearKey){
+      total += sumByPartnerDate(dateStr, partner);
+    }
+  });
+  return total;
+}
+function sumTotalMonth(monthKey){
+  let total = 0;
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(toMonthKey(dateStr) === monthKey) total += sumByDateTotal(dateStr);
+  });
+  return total;
+}
+function sumTotalYear(yearKey){
+  let total = 0;
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(toYearKey(dateStr) === yearKey) total += sumByDateTotal(dateStr);
+  });
+  return total;
+}
+function prevMonthKey(monthKey){
+  const [y,m] = monthKey.split("-").map(Number);
+  return `${y-1}-${String(m).padStart(2,'0')}`;
+}
+
+/* =========================
+   메뉴
+========================= */
+function showPage(pageId, btn){
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.getElementById(pageId).classList.add('active');
+  document.querySelectorAll('.menu button').forEach(el=>el.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* =========================
+   빠른 현황 / 조회 요약
+========================= */
+function populateSearchDefaults(){
+  const today = new Date();
+  const todayStr = fmtDate(today);
+  const prevTodayStr = getPrevYearDateStr(todayStr);
+
+  const dayInput = document.getElementById("inlineSearchDay");
+  const monthInput = document.getElementById("inlineSearchMonth");
+  const yearSelect = document.getElementById("inlineSearchYear");
+
+  if(dayInput) dayInput.value = todayStr;
+  if(monthInput) monthInput.value = todayStr.slice(0,7);
+
+  if(yearSelect){
+    yearSelect.innerHTML = "";
+    const currentYear = today.getFullYear();
+    for(let y=currentYear+1; y>=currentYear-5; y--){
+      const opt = document.createElement("option");
+      opt.value = String(y);
+      opt.textContent = `${y}년`;
+      if(y===currentYear) opt.selected = true;
+      yearSelect.appendChild(opt);
+    }
+  }
+
+  document.getElementById("todayHeaderLabel").textContent = humanDate(todayStr);
+  document.getElementById("prevTodayHeaderLabel").textContent = humanDate(prevTodayStr);
+}
+
+function renderSummaryTable(){
+  const body = document.getElementById("summaryBody");
+  body.innerHTML = "";
+
+  const todayDate = new Date();
+  const todayStr = fmtDate(todayDate);
+  const prevTodayStr = getPrevYearDateStr(todayStr);
+
+  const daySearch = document.getElementById("inlineSearchDay").value || todayStr;
+  const monthSearch = document.getElementById("inlineSearchMonth").value || todayStr.slice(0,7);
+  const yearSearch = document.getElementById("inlineSearchYear").value || todayStr.slice(0,4);
+
+  const prevDaySearch = getPrevYearDateStr(daySearch);
+  const prevMonthSearch = prevMonthKey(monthSearch);
+  const prevYearSearch = String(Number(yearSearch)-1);
+
+  document.getElementById("todayHeaderLabel").textContent = humanDate(todayStr);
+  document.getElementById("prevTodayHeaderLabel").textContent = humanDate(prevTodayStr);
+  document.getElementById("inlineSearchDayPrevLabel").textContent = humanDate(prevDaySearch);
+  document.getElementById("inlineSearchMonthPrevLabel").textContent = `${prevMonthSearch}`;
+  document.getElementById("inlineSearchYearPrevLabel").textContent = `${prevYearSearch}년`;
+
+  const totalTr = document.createElement("tr");
+  totalTr.innerHTML = `
+    <td class="left"><b>총합</b></td>
+    <td class="th-blue">${sumByDateTotal(todayStr)}</td>
+    <td>${sumByDateTotal(prevTodayStr)}</td>
+    <td>${sumByDateTotal(daySearch)}</td>
+    <td>${sumByDateTotal(prevDaySearch)}</td>
+    <td>${sumTotalMonth(monthSearch)}</td>
+    <td>${sumTotalMonth(prevMonthSearch)}</td>
+    <td>${sumTotalYear(yearSearch)}</td>
+    <td>${sumTotalYear(prevYearSearch)}</td>
+  `;
+  body.appendChild(totalTr);
+
+  state.partners.forEach(partner=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="left">${escapeHtml(partner)}</td>
+      <td class="th-blue">${sumByPartnerDate(todayStr, partner)}</td>
+      <td>${sumByPartnerDate(prevTodayStr, partner)}</td>
+      <td>${sumByPartnerDate(daySearch, partner)}</td>
+      <td>${sumByPartnerDate(prevDaySearch, partner)}</td>
+      <td>${sumByPartnerMonth(monthSearch, partner)}</td>
+      <td>${sumByPartnerMonth(prevMonthSearch, partner)}</td>
+      <td>${sumByPartnerYear(yearSearch, partner)}</td>
+      <td>${sumByPartnerYear(prevYearSearch, partner)}</td>
+    `;
+    body.appendChild(tr);
+  });
+
+  const currentMonthKey = todayStr.slice(0,7);
+  const currentYearKey = todayStr.slice(0,4);
+
+  let currentMonthToDate = 0;
+  let currentYearToDate = 0;
+
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(dateStr <= todayStr && dateStr.startsWith(currentMonthKey)){
+      currentMonthToDate += sumByDateTotal(dateStr);
+    }
+    if(dateStr <= todayStr && dateStr.startsWith(currentYearKey)){
+      currentYearToDate += sumByDateTotal(dateStr);
+    }
+  });
+
+  document.getElementById("statTodayLabel").textContent = `${humanDate(todayStr)} 총합`;
+  document.getElementById("statPrevDayLabel").textContent = `${humanDate(prevTodayStr)} 총합`;
+  document.getElementById("statSearchMonthLabel").textContent = `${todayDate.getMonth()+1}월 1일~${todayDate.getDate()}일 총합`;
+  document.getElementById("statSearchYearLabel").textContent = `${todayDate.getFullYear()}년 1월 1일~현재 총합`;
+
+  document.getElementById("statToday").textContent = sumByDateTotal(todayStr);
+  document.getElementById("statPrevDay").textContent = sumByDateTotal(prevTodayStr);
+  document.getElementById("statSearchMonth").textContent = currentMonthToDate;
+  document.getElementById("statSearchYear").textContent = currentYearToDate;
+}
+
+/* =========================
+   기준정보 관리
+========================= */
+function renderPartnerTable(){
+  const body = document.getElementById("partnerTableBody");
+  body.innerHTML = "";
+  state.partners.forEach((name, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${escapeHtml(name)}" onchange="updatePartner(${idx}, this.value)"></td>
+      <td><button class="red" onclick="removePartner(${idx})">삭제</button></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+function updatePartner(idx, value){
+  const oldName = state.partners[idx];
+  const newName = value.trim() || oldName;
+
+  if(oldName !== newName){
+    Object.keys(state.entries).forEach(dateStr=>{
+      Object.keys(state.entries[dateStr] || {}).forEach(type=>{
+        if(state.entries[dateStr][type] && oldName in state.entries[dateStr][type]){
+          state.entries[dateStr][type][newName] = state.entries[dateStr][type][oldName];
+          delete state.entries[dateStr][type][oldName];
+        }
+      });
+    });
+  }
+  state.partners[idx] = newName;
+  saveState();
+  renderAll();
+}
+function addPartnerRow(){
+  state.partners.push("새파트너");
+  saveState();
+  renderAll();
+}
+function removePartner(idx){
+  const target = state.partners[idx];
+  state.partners.splice(idx,1);
+  Object.keys(state.entries).forEach(dateStr=>{
+    Object.keys(state.entries[dateStr] || {}).forEach(type=>{
+      if(state.entries[dateStr][type] && target in state.entries[dateStr][type]){
+        delete state.entries[dateStr][type][target];
+      }
+    });
+  });
+  saveState();
+  renderAll();
+}
+
+function renderTypeTable(){
+  const body = document.getElementById("typeTableBody");
+  body.innerHTML = "";
+  state.types.forEach((name, idx)=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${escapeHtml(name)}" onchange="updateType(${idx}, this.value)"></td>
+      <td><button class="red" onclick="removeType(${idx})">삭제</button></td>
+    `;
+    body.appendChild(tr);
+  });
+}
+function updateType(idx, value){
+  const oldName = state.types[idx];
+  const newName = value.trim() || oldName;
+
+  if(oldName !== newName){
+    Object.keys(state.entries).forEach(dateStr=>{
+      if(state.entries[dateStr][oldName]){
+        state.entries[dateStr][newName] = state.entries[dateStr][oldName];
+        delete state.entries[dateStr][oldName];
+      }
+    });
+  }
+  state.types[idx] = newName;
+  saveState();
+  renderAll();
+}
+function addTypeRow(){
+  state.types.push("새구분");
+  saveState();
+  renderAll();
+}
+function removeType(idx){
+  const target = state.types[idx];
+  state.types.splice(idx,1);
+  Object.keys(state.entries).forEach(dateStr=>{
+    if(state.entries[dateStr][target]) delete state.entries[dateStr][target];
+  });
+  saveState();
+  renderAll();
+}
+
+/* =========================
+   최근 1주 입력
+========================= */
+function syncWeekControls(){
+  document.getElementById("weekBaseDate").value = state.weeklyBaseDate;
+}
+function renderWeekInputTable(){
+  syncWeekControls();
+  const table = document.getElementById("weekInputTable");
+  const days = getWeekDays(state.weeklyBaseDate);
+  const label = `${humanDate(fmtDate(days[0]))} ~ ${humanDate(fmtDate(days[6]))}`;
+  document.getElementById("weekCaption").textContent = label;
+
+  let html = "<thead>";
+  html += "<tr><th colspan='2'></th>";
+  days.forEach(d=> html += `<th>${dayKor(d)}</th>`);
+  html += "<th>합계</th></tr>";
+  html += `<tr><th colspan='2'>${weekLabel(days[0])}</th>`;
+  days.forEach(d=> html += `<th>${d.getDate()}</th>`);
+  html += "<th>합계</th></tr>";
+  html += "</thead><tbody>";
+
+  state.types.forEach((type)=>{
+    state.partners.forEach((partner, partnerIdx)=>{
+      html += "<tr>";
+      if(partnerIdx === 0){
+        html += `<td class="yellow" rowspan="${state.partners.length}">${escapeHtml(type)}</td>`;
+      }
+      html += `<td class="left">${escapeHtml(partner)}</td>`;
+
+      let rowTotal = 0;
+      days.forEach(d=>{
+        const dateStr = fmtDate(d);
+        const val = getValue(dateStr, type, partner);
+        rowTotal += Number(val) || 0;
+        html += `<td><input type="number" min="0" value="${val || ''}" onchange="handleEntryChange('${dateStr}','${escapeJs(type)}','${escapeJs(partner)}', this.value)"></td>`;
+      });
+
+      html += `<td><b>${rowTotal}</b></td>`;
+      html += "</tr>";
+    });
+  });
+
+  html += "</tbody>";
+  table.innerHTML = html;
+}
+function handleEntryChange(dateStr, type, partner, value){
+  setValue(dateStr, type, partner, value);
+  saveState();
+  renderWeekInputTable();
+  renderSummaryTable();
+}
+function applyWeekSearch(){
+  const base = document.getElementById("weekBaseDate").value || fmtDate(new Date());
+  const moveCount = Number(document.getElementById("weekMoveCount").value || 0);
+  const d = new Date(base);
+  d.setDate(d.getDate() - (moveCount * 7));
+  state.weeklyBaseDate = fmtDate(d);
+  saveState();
+  renderWeekInputTable();
+}
+function moveWeek(direction){
+  const d = new Date(state.weeklyBaseDate);
+  d.setDate(d.getDate() + (direction * 7));
+  state.weeklyBaseDate = fmtDate(d);
+  saveState();
+  renderWeekInputTable();
+}
+
+/* =========================
+   백업
+========================= */
+function exportBackup(){
+  saveState();
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    app: "container_dashboard",
+    version: "google-v1",
+    data: state
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json;charset=utf-8"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `container_dashboard_backup_${fmtDate(new Date())}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importBackupFile(event){
+  const file = event.target.files && event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const parsed = JSON.parse(e.target.result);
+      const imported = parsed.data ? parsed.data : parsed;
+      if(!confirm("백업 데이터를 현재 화면에 덮어쓸까요?")) return;
+      state = imported;
+      if(!state.weeklyBaseDate) state.weeklyBaseDate = fmtDate(new Date());
+      saveState();
+      renderAll();
+      alert("백업 데이터가 복원되었습니다.");
+    }catch(err){
+      alert("백업 파일 형식이 올바르지 않습니다.");
+    }finally{
+      event.target.value = "";
+    }
+  };
+  reader.readAsText(file, "utf-8");
+}
+
+/* =========================
+   구글시트 연동
+========================= */
+function flattenEntries(){
+  const rows = [];
+  Object.keys(state.entries).forEach(dateStr=>{
+    Object.keys(state.entries[dateStr] || {}).forEach(type=>{
+      Object.keys(state.entries[dateStr][type] || {}).forEach(partner=>{
+        const qty = Number(state.entries[dateStr][type][partner] || 0);
+        rows.push({
+          date: dateStr,
+          partner,
+          type,
+          qty
+        });
+      });
+    });
+  });
+  return rows;
+}
+
+async function saveAllToGoogleSheet(){
+  try{
+    setSyncStatus("저장 중...", false);
+
+    const payload = {
+      action: "replaceAll",
+      partners: state.partners,
+      types: state.types,
+      weeklyBaseDate: state.weeklyBaseDate,
+      rows: flattenEntries()
+    };
+
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify(payload)
+    });
+
+    const text = await res.text();
+    saveState();
+    setSyncStatus("구글시트 저장 완료", true);
+    alert("구글시트에 저장되었습니다.\n\n응답: " + text);
+  }catch(err){
+    console.error(err);
+    setSyncStatus("저장 실패", false);
+    alert("구글시트 저장 중 오류가 발생했습니다.");
+  }
+}
+
+async function loadAllFromGoogleSheet(){
+  try{
+    setSyncStatus("불러오는 중...", false);
+
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+    if(!data || !Array.isArray(data.rows)){
+      throw new Error("형식 오류");
+    }
+
+    state.partners = Array.isArray(data.partners) && data.partners.length ? data.partners : deepClone(defaultState.partners);
+    state.types = Array.isArray(data.types) && data.types.length ? data.types : deepClone(defaultState.types);
+    state.weeklyBaseDate = data.weeklyBaseDate || fmtDate(new Date());
+    state.entries = {};
+
+    data.rows.forEach(row=>{
+      if(row.date && row.partner && row.type){
+        setValue(String(row.date), String(row.type), String(row.partner), Number(row.qty || 0));
+      }
+    });
+
+    saveState();
+    renderAll();
+    setSyncStatus("구글시트 불러오기 완료", true);
+  }catch(err){
+    console.error(err);
+    setSyncStatus("불러오기 실패", false);
+    alert("구글시트 불러오기 중 오류가 발생했습니다.");
+  }
+}
+
+function setSyncStatus(text, ok){
+  const el = document.getElementById("syncStatus");
+  el.textContent = text;
+  el.style.background = ok ? "#ecfdf5" : "#eef2ff";
+  el.style.color = ok ? "#065f46" : "#4338ca";
+}
+
+/* =========================
+   기타
+========================= */
+function clearAllData(){
+  if(!confirm("전체 데이터를 초기화할까요?")) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = deepClone(defaultState);
+  state.weeklyBaseDate = fmtDate(new Date());
+  renderAll();
+}
+function resetDemo(){
+  state = deepClone(defaultState);
+  state.weeklyBaseDate = fmtDate(new Date());
+  seedDemoEntries(state);
+  saveState();
+  renderAll();
+}
+function seedDemoEntries(targetState){
+  const baseDate = new Date();
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(baseDate);
+    d.setDate(baseDate.getDate()-i);
+    days.push(fmtDate(d));
+  }
+
+  const consoleRef = {
+    "참좋은날":[8,5,1,2,4,2,0],
+    "원투":[0,0,0,0,0,0,0],
+    "범아":[2,2,4,12,2,5,5],
+    "바이마":[0,0,0,0,0,0,0],
+    "늘좋은날":[1,3,0,1,1,2,0],
+    "드림":[0,0,0,0,0,0,0]
+  };
+  const fullRef = {
+    "참좋은날":[0,0,0,0,0,0,0],
+    "원투":[0,0,0,0,0,0,0],
+    "범아":[0,0,0,0,0,0,0],
+    "바이마":[0,0,0,0,0,0,0],
+    "늘좋은날":[0,0,0,0,0,0,0],
+    "드림":[0,0,0,0,0,0,0]
+  };
+
+  days.forEach((dateStr, idx)=>{
+    targetState.entries[dateStr] = targetState.entries[dateStr] || {};
+    targetState.entries[dateStr]["콘솔"] = targetState.entries[dateStr]["콘솔"] || {};
+    targetState.entries[dateStr]["풀컨"] = targetState.entries[dateStr]["풀컨"] || {};
+
+    Object.keys(consoleRef).forEach(partner=>{
+      targetState.entries[dateStr]["콘솔"][partner] = consoleRef[partner][idx] || 0;
+    });
+    Object.keys(fullRef).forEach(partner=>{
+      targetState.entries[dateStr]["풀컨"][partner] = fullRef[partner][idx] || 0;
+    });
+  });
+
+  days.forEach((dateStr, idx)=>{
+    const prevDate = getPrevYearDateStr(dateStr);
+    targetState.entries[prevDate] = targetState.entries[prevDate] || {};
+    targetState.entries[prevDate]["콘솔"] = targetState.entries[prevDate]["콘솔"] || {};
+    targetState.entries[prevDate]["풀컨"] = targetState.entries[prevDate]["풀컨"] || {};
+
+    targetState.partners.forEach(p=>{
+      targetState.entries[prevDate]["콘솔"][p] = Math.max(0, (consoleRef[p]?.[idx] || 0) - (idx % 3));
+      targetState.entries[prevDate]["풀컨"][p] = 0;
+    });
+  });
+}
+
+function renderAll(){
+  renderPartnerTable();
+  renderTypeTable();
+  renderWeekInputTable();
+  renderSummaryTable();
+  saveState();
+}
+
+/* =========================
+   초기 실행
+========================= */
+populateSearchDefaults();
+renderAll();
+loadAllFromGoogleSheet();
+</script>
+</body>
+</html>
